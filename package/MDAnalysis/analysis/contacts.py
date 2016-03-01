@@ -904,12 +904,16 @@ def best_hummer_q(r, r0, beta=5.0, lambda_constant=1.8):
     -------
     Q : float
       Fraction of native contacts
-    result : array
-      Intermediate, r-r0 array transformed by the switching function
     """
     result = 1/(1 + np.exp(beta*(r - lambda_constant * r0)))
 
-    return result.sum() / len(r0), result
+    return result.sum() / len(r0)
+
+
+def hard_cut(distances, cutoff):
+    """calculate fraction of distances below cutoff"""
+    y = distances <= cutoff
+    return float(y.sum()) / distances.size
 
 
 class Contacts(AnalysisBase):
@@ -1003,7 +1007,7 @@ class Contacts(AnalysisBase):
     """
     def __init__(self, u, selection, refgroup, method="cutoff", radius=4.5,
                  outfile=None, start=None, stop=None, step=None, **kwargs):
-        """Calculate the persistence length for polymer chains
+        """
 
         Parameters
         ----------
@@ -1025,30 +1029,22 @@ class Contacts(AnalysisBase):
         step : int, optional
             Step between frames to analyse, Default: 1
 
-        Parameters for 'best-hummer' method
-        -----------------------------------
-        lambda_constant: float, optional (1.8 unitless)
-            contact is considered formed between (lambda*r0,r0)
-        beta: float, optional (5 Angstroms^-1)
-            softness of the switching function, the lower the softer
+        **kwargs : argument list passed to cut-off function
+            check respective functions for reasonable values
 
         Attributes
         ----------
         results: list
             Fraction of native contacts for each frame
         """
+        if method == 'cutoff':
+            self.fraction_contacts = hard_cut
+        elif method == 'best-hummer':
+            self.fraction_contacts = best_hummer_q
+        else:
+            self.fraction_contacts = method
 
-        # check method
-        if method not in ("cutoff", "best-hummer"):
-            raise ValueError("method has to be 'cutoff' or 'best-hummer'")
-        self._method = method
-
-        # method-specific parameters
-        if method == "best-hummer":
-            self.beta = kwargs.get('beta', 5.0)
-            self.lambda_constant = kwargs.get('lambda_constant', 1.8)
-
-        # steup boilerplate
+        # setup boilerplate
         self.u = u
         self._setup_frames(self.u.trajectory,
                            start=start,
@@ -1064,6 +1060,7 @@ class Contacts(AnalysisBase):
         r0 = distance_array(refA.positions, refB.positions)
         self.r0 = r0
         self.mask = r0 < radius
+        self.fraction_kwargs = kwargs
 
         self.contact_matrix = []
         self.timeseries = []
@@ -1095,16 +1092,10 @@ class Contacts(AnalysisBase):
 
         # select only the contacts that were formed in the reference state
         # r, r0 are 1D array
-        r, r0 = d[mask], r0[mask]
+        r = d[mask]
+        r0 = r0[mask]
 
-        if self._method == "cutoff":
-            y = r <= r0
-            y = float(y.sum())/mask.sum()
-        elif self._method == "best-hummer":
-            y, _ = best_hummer_q(r, r0, self.beta, self.lambda_constant)
-        else:
-            raise ValueError("Unknown method type, has to be "
-                             "'cutoff' or 'best-hummer'")
+        y = self.fraction_contacts(r, r0, **self.fraction_kwargs)
 
         cm = np.zeros((grA.positions.shape[0], grB.positions.shape[0]))
         cm[mask] = y
