@@ -2,8 +2,8 @@
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 #
 # MDAnalysis --- http://www.MDAnalysis.org
-# Copyright (c) 2006-2015 Naveen Michaud-Agrawal, Elizabeth J. Denning, Oliver Beckstein
-# and contributors (see AUTHORS for the full list)
+# Copyright (c) 2006-2015 Naveen Michaud-Agrawal, Elizabeth J. Denning, Oliver
+# Beckstein and contributors (see AUTHORS for the full list)
 #
 # Released under the GNU Public Licence, v2 or any higher version
 #
@@ -14,14 +14,13 @@
 # J. Comput. Chem. 32 (2011), 2319--2327, doi:10.1002/jcc.21787
 #
 
-"""
-Native contacts analysis --- :mod:`MDAnalysis.analysis.contacts`
+"""Native contacts analysis --- :mod:`MDAnalysis.analysis.contacts`
 ================================================================
 
 Analysis of native contacts *q* over a trajectory.
 
-* a "contact" exists between two atoms *i* and *j* if the distance between them is
-  smaller than a given *radius*
+* a "contact" exists between two atoms *i* and *j* if the distance between them
+  is smaller than a given *radius*
 
 * a "native contact" exists between *i* and *j* if a contact exists and if the
   contact also exists between the equivalent atoms in a reference structure or
@@ -71,25 +70,37 @@ in MDAnalysis. ::
     # example trajectory (transition of AdK from closed to open)
     u = MDAnalysis.Universe(PSF,DCD)
 
-    # crude definition of salt bridges as contacts between NH/NZ in ARG/LYS and OE*/OD* in ASP/GLU.
-    # You might want to think a little bit harder about the problem before using this for real work.
+    # crude definition of salt bridges as contacts between NH/NZ in ARG/LYS and
+    # OE*/OD* in ASP/GLU. You might want to think a little bit harder about the
+    # problem before using this for real work.
+
     sel_basic = "(resname ARG or resname LYS) and (name NH* or name NZ)"
     sel_acidic = "(resname ASP or resname GLU) and (name OE* or name OD*)"
 
-    # reference groups (first frame of the trajectory, but you could also use a separate PDB, eg crystal structure)
+    # reference groups (first frame of the trajectory, but you could also use a
+    # separate PDB, eg crystal structure)
+
     acidic = u.select_atoms(sel_acidic)
     basic = u.select_atoms(sel_basic)
 
-    # set up analysis of native contacts ("salt bridges"); salt bridges have a distance <6 A
-    CA1 = MDAnalysis.analysis.contacts.ContactAnalysis1(u, selection=(sel_acidic, sel_basic), refgroup=(acidic,
-    basic), radius=6.0, outfile="qsalt.dat")
+    # set up analysis of native contacts ("salt bridges"); salt bridges have a
+    # distance <6 A
+
+    CA1 = MDAnalysis.analysis.contacts.ContactAnalysis1(
+            u, selection=(sel_acidic, sel_basic), refgroup=(acidic,basic),
+            radius=6.0, outfile="qsalt.dat")
 
     # iterate through trajectory and perform analysis of "native contacts" q
-    # (force=True ignores any previous results, force=True is useful when testing)
+    # (force=True ignores any previous results, force=True is useful when
+    # testing)
+
     CA1.run(force=True)
 
-    # plot time series q(t) [possibly do "import pylab; pylab.clf()" do clear the figure first...]
-    CA1.plot(filename="adk_saltbridge_contact_analysis1.pdf", linewidth=3, color="blue")
+    # plot time series q(t) [possibly do "import pylab; pylab.clf()" do clear
+    # the figure first...]
+
+    CA1.plot(filename="adk_saltbridge_contact_analysis1.pdf", linewidth=3,
+             color="blue")
 
     # or plot the data in qsalt.dat yourself.
     CA1.plot_qavg(filename="adk_saltbridge_contact_analysis1_matrix.pdf")
@@ -209,18 +220,18 @@ class ContactAnalysis(object):
         trajectory : filename
             trajectory
         ref1 : filename or ``None``, optional
-            structure of the reference conformation 1 (pdb); if ``None`` the *first*
-            frame of the trajectory is chosen
+            structure of the reference conformation 1 (pdb); if ``None`` the
+            *first* frame of the trajectory is chosen
         ref2 : filename or ``None``, optional
-            structure of the reference conformation 2 (pdb); if ``None`` the *last*
-            frame of the trajectory is chosen
+            structure of the reference conformation 2 (pdb); if ``None`` the
+            *last* frame of the trajectory is chosen
         radius : float, optional, default 8 A
             contacts are deemed any Ca within radius
         targetdir : path, optional, default ``.``
             output files are saved in this directory
         infix : string, optional
-            additional tag string that is inserted into the output filename of the
-            data file
+            additional tag string that is inserted into the output filename of
+            the data file
          selection : string, optional, default ``"name CA"``
             MDAnalysis selection string that selects the particles of
             interest; the default is to only select the C-alpha atoms
@@ -234,6 +245,7 @@ class ContactAnalysis(object):
             per-residue basis to compute contacts. This allows, for instance
             defining the sidechains as `selection` and then computing distances
             between sidechain centroids.
+
         """
 
         self.topology = topology
@@ -254,11 +266,15 @@ class ContactAnalysis(object):
         # short circuit if output file already exists: skip everything
         if self.output_exists():
             self._skip = True
-            return  # do not bother reading any data or initializing arrays... !!
-        # don't bother if trajectory is empty (can lead to segfaults so better catch it)
+            # do not bother reading any data or initializing arrays... !!
+            return
+
+        # don't bother if trajectory is empty (can lead to segfaults so better
+        # catch it)
         stats = os.stat(trajectory)
         if stats.st_size == 0:
-            warnings.warn('trajectory = {trajectory!s} is empty, skipping...'.format(**vars()))
+            warnings.warn('trajectory = {trajectory!s} is empty, '
+                          'skipping...'.format(**vars()))
             self._skip = True
             return
         # under normal circumstances we do not skip
@@ -308,9 +324,9 @@ class ContactAnalysis(object):
               passed on to :func:`MDAnalysis.lib.distances.self_distance_array`
               as a preallocated array
         centroids : bool, optional, default ``None``
-              ``True``: calculate per-residue centroids from the selected atoms;
-              ``False``: consider each atom separately; ``None``: use the class
-              default for *centroids* [``None``]
+              ``True``: calculate per-residue centroids from the selected
+              atoms; ``False``: consider each atom separately; ``None``: use
+              the class default for *centroids* [``None``]
 
         """
         centroids = kwargs.pop("centroids", None)
@@ -319,15 +335,18 @@ class ContactAnalysis(object):
             coordinates = g.positions
         else:
             # centroids per residue (but only including the selected atoms)
-            coordinates = np.array([residue.centroid() for residue in g.split("residue")])
-        return MDAnalysis.lib.distances.self_distance_array(coordinates, **kwargs)
+            coordinates = np.array([residue.centroid()
+                                    for residue in g.split("residue")])
+        return MDAnalysis.lib.distances.self_distance_array(coordinates,
+                                                            **kwargs)
 
     def output_exists(self, force=False):
         """Return True if default output file already exists.
 
         Disable with force=True (will always return False)
         """
-        return (os.path.isfile(self.output) or os.path.isfile(self.output_bz2)) and not (self.force or force)
+        return (os.path.isfile(self.output) or
+                os.path.isfile(self.output_bz2)) and not (self.force or force)
 
     def run(self, store=True, force=False):
         """Analyze trajectory and produce timeseries.
@@ -336,7 +355,8 @@ class ContactAnalysis(object):
         store=True) and writes them to a bzip2-compressed data file.
         """
         if self._skip or self.output_exists(force=force):
-            warnings.warn("File {output!r} or {output_bz2!r} already exists, loading {trajectory!r}.".format(**vars(self)))
+            warnings.warn("File {output!r} or {output_bz2!r} already exists, "
+                          "loading {trajectory!r}.".format(**vars(self)))
             try:
                 self.load(self.output)
             except IOError:
@@ -345,7 +365,10 @@ class ContactAnalysis(object):
 
         outbz2 = bz2.BZ2File(self.output_bz2, mode='w', buffering=8192)
         try:
-            outbz2.write("# q1-q2 analysis\n# nref1 = {0:d}\n# nref2 = {1:d}\n".format(self.nref[0], self.nref[1]))
+            outbz2.write("# q1-q2 analysis\n"
+                         "# nref1 = {0:d}\n"
+                         "# nref2 = {1:d}\n".format(self.nref[0],
+                                                    self.nref[1]))
             outbz2.write("# frame  q1  q2   n1  n2\n")
             records = []
             for ts in self.u.trajectory:
@@ -444,28 +467,32 @@ class ContactAnalysis(object):
 
         kwargs.setdefault('color', 'black')
         if self.timeseries is None:
-            raise ValueError("No timeseries data; do 'ContactAnalysis.run(store=True)' first.")
+            raise ValueError("No timeseries data; do "
+                             "'ContactAnalysis.run(store=True)' first.")
         t = self.timeseries
         plot(t[1], t[2], **kwargs)
         xlabel(r"$q_1$")
         ylabel(r"$q_2$")
 
 
-# ContactAnalysis1 is a (hopefully) temporary hack. It should be unified with ContactAnalysis
-# or either should be derived from a base class because many methods are copy&paste with
-# minor changes (mostly for going from q1q2 -> q1 only).
-# If ContactAnalysis is enhanced to accept two references then this should be even easier.
-# It might also be worthwhile making a simpler class that just does the q calculation
-# and use it for both reference and trajectory data.
+# ContactAnalysis1 is a (hopefully) temporary hack. It should be unified with
+# ContactAnalysis or either should be derived from a base class because many
+# methods are copy&paste with minor changes (mostly for going from q1q2 -> q1
+# only). If ContactAnalysis is enhanced to accept two references then this
+# should be even easier. It might also be worthwhile making a simpler class
+# that just does the q calculation and use it for both reference and trajectory
+# data.
 class ContactAnalysis1(object):
-    """Perform a very flexible native contact analysis with respect to a single reference.
+    """Perform a very flexible native contact analysis with respect to a single
+    reference.
 
     This analysis class allows one to calculate the fraction of native contacts
     *q* between two arbitrary groups of atoms with respect to an arbitrary
     reference structure. For instance, as a reference one could take a crystal
     structure of a complex, and as the two groups atoms one selects two
     molecules A and B in the complex. Then the question to be answered by *q*
-    is, is which percentage of the contacts between A and B persist during the simulation.
+    is, is which percentage of the contacts between A and B persist during the
+    simulation.
 
     First prepare :class:`~MDAnalysis.core.AtomGroup.AtomGroup` selections for
     the reference atoms; this example uses some arbitrary selections::
@@ -494,7 +521,8 @@ class ContactAnalysis1(object):
 
     Now we are ready to set up the analysis::
 
-      CA1 = ContactAnalysis1(u, selection=(selA,selB), refgroup=(refA,refB), radius=8.0, outfile="q.dat")
+      CA1 = ContactAnalysis1(u, selection=(selA,selB), refgroup=(refA,refB),
+                             radius=8.0, outfile="q.dat")
 
     If the groups do not match in length then a :exc:`ValueError` is raised.
 
@@ -532,14 +560,16 @@ class ContactAnalysis1(object):
 
         :Keywords:
           *selection*
-            selection string that determines which distances are calculated; if this
-            is a tuple or list with two entries then distances are calculated between
-            these two different groups ["name CA or name B*"]
+            selection string that determines which distances are calculated; if
+            this is a tuple or list with two entries then distances are
+            calculated between these two different groups ["name CA or name
+            B*"]
           *refgroup*
-            reference group, either a single :class:`~MDAnalysis.core.AtomGroup.AtomGroup`
-            (if there is only a single *selection*) or a list of two such groups.
-            The reference contacts are directly computed from *refgroup* and hence
-            the atoms in the reference group(s) must be equivalent to the ones produced
+            reference group, either a single
+            :class:`~MDAnalysis.core.AtomGroup.AtomGroup` (if there is only a
+            single *selection*) or a list of two such groups. The reference
+            contacts are directly computed from *refgroup* and hence the atoms
+            in the reference group(s) must be equivalent to the ones produced
             by the *selection* on the input trajectory.
           *radius*
             contacts are deemed any atoms within radius [8.0 A]
@@ -562,6 +592,7 @@ class ContactAnalysis1(object):
         the attribute :attr:`ContactAnalysis1.timeseries`.
 
         .. deprecated: 0.14.0
+
         """
 
         # XX or should I use as input
@@ -574,8 +605,9 @@ class ContactAnalysis1(object):
         # - make this selection based on qavg
         from os.path import splitext
 
-        warnings.warn("ContactAnalysis1 is deprecated and will be removed in 1.0. "
-                      "Use Contacts instead.", category=DeprecationWarning)
+        warnings.warn("ContactAnalysis1 is deprecated and will be removed "
+                      "in 1.0. Use Contacts instead.",
+                      category=DeprecationWarning)
 
         self.selection_strings = self._return_tuple2(kwargs.pop(
             'selection', "name CA or name B*"), "selection")
@@ -592,16 +624,19 @@ class ContactAnalysis1(object):
         self.filenames = args
         self.universe = MDAnalysis.as_Universe(*args, **kwargs)
 
-        self.selections = [self.universe.select_atoms(s) for s in self.selection_strings]
+        self.selections = [self.universe.select_atoms(s)
+                           for s in self.selection_strings]
 
         # sanity checkes
         for x in self.references:
             if x is None:
                 raise ValueError("a reference AtomGroup must be supplied")
-        for ref, sel, s in zip(self.references, self.selections, self.selection_strings):
+        for ref, sel, s in zip(self.references,
+                               self.selections,
+                               self.selection_strings):
             if ref.atoms.n_atoms != sel.atoms.n_atoms:
-                raise ValueError("selection=%r: Number of atoms differ between "
-                                 "reference (%d) and trajectory (%d)" %
+                raise ValueError("selection=%r: Number of atoms differ "
+                                 "between reference (%d) and trajectory (%d)" %
                                  (s, ref.atoms.n_atoms, sel.atoms.n_atoms))
 
         # compute reference contacts
@@ -627,8 +662,8 @@ class ContactAnalysis1(object):
         elif len(t) == 1:
             return (x, x)
         else:
-            raise ValueError("%(name)s must be a single object or a tuple/list with two objects "
-                             "and not %(x)r" % vars())
+            raise ValueError("%(name)s must be a single object or a "
+                             "tuple/list with two objects and not %(x)r" % vars())
 
     def output_exists(self, force=False):
         """Return True if default output file already exists.
@@ -637,38 +672,47 @@ class ContactAnalysis1(object):
         """
         return os.path.isfile(self.output) and not (self.force or force)
 
-    def run(self, store=True, force=False, start=0, stop=None, step=1, **kwargs):
+    def run(self, store=True, force=False, start=0, stop=None, step=1,
+            **kwargs):
         """Analyze trajectory and produce timeseries.
 
         Stores results in :attr:`ContactAnalysis1.timeseries` (if store=True)
         and writes them to a data file. The average q is written to a second
         data file.
         *start*
-            The value of the first frame index in the trajectory to be used (default: index 0)
+            The value of the first frame index in the trajectory to be used
+            (default: index 0)
         *stop*
-            The value of the last frame index in the trajectory to be used (default: None -- use all frames)
+            The value of the last frame index in the trajectory to be used
+            (default: None -- use all frames)
         *step*
-            The number of frames to skip during trajectory iteration (default: use every frame)
+            The number of frames to skip during trajectory iteration (default:
+            use every frame)
+
         """
 
         if 'start_frame' in kwargs:
-            warnings.warn("start_frame argument has been deprecated, use start instead --"
-                           "removal targeted for version 0.15.0", DeprecationWarning)
+            warnings.warn("start_frame argument has been deprecated, use "
+                          "start instead -- removal targeted for version "
+                          "0.15.0", DeprecationWarning)
             start = kwargs.pop('start_frame')
 
         if 'end_frame' in kwargs:
-            warnings.warn("end_frame argument has been deprecated, use stop instead --"
-                           "removal targeted for version 0.15.0", DeprecationWarning)
+            warnings.warn("end_frame argument has been deprecated, use "
+                          "stop instead -- removal targeted for version "
+                          "0.15.0", DeprecationWarning)
             stop = kwargs.pop('end_frame')
 
         if 'step_value' in kwargs:
-            warnings.warn("step_value argument has been deprecated, use step instead --"
-                           "removal targeted for version 0.15.0", DeprecationWarning)
+            warnings.warn("step_value argument has been deprecated, use "
+                          "step instead -- removal targeted for version "
+                          "0.15.0", DeprecationWarning)
             step = kwargs.pop('step_value')
 
         if self.output_exists(force=force):
-            warnings.warn("File %r already exists, loading it INSTEAD of trajectory %r. "
-                          "Use force=True to overwrite the output file. " %
+            warnings.warn("File %r already exists, loading it INSTEAD of "
+                          "trajectory %r. Use force=True to overwrite "
+                          "the output file. " %
                           (self.output, self.universe.trajectory.filename))
             self.load(self.output)
             return None
@@ -682,7 +726,9 @@ class ContactAnalysis1(object):
             for ts in self.universe.trajectory[start:stop:step]:
                 frame = ts.frame
                 # use pre-allocated distance array to save a little bit of time
-                MDAnalysis.lib.distances.distance_array(A.coordinates(), B.coordinates(), result=self.d)
+                MDAnalysis.lib.distances.distance_array(A.coordinates(),
+                                                        B.coordinates(),
+                                                        result=self.d)
                 self.qarray(self.d, out=self.q)
                 n1, q1 = self.qN(self.q, out=self._qtmp)
                 self.qavg += self.q
@@ -696,7 +742,8 @@ class ContactAnalysis1(object):
         if n_frames > 0:
             self.qavg /= n_frames
         else:
-            logger.warn("No frames were analyzed. Check values of start, stop, step.")
+            logger.warn("No frames were analyzed. "
+                        "Check values of start, stop, step.")
             logger.debug("start={start} stop={stop} step={step}".format(**vars()))
         np.savetxt(self.outarray, self.qavg, fmt="%8.6f")
         return self.output
@@ -767,7 +814,8 @@ class ContactAnalysis1(object):
         kwargs.setdefault('color', 'black')
         kwargs.setdefault('linewidth', 2)
         if self.timeseries is None:
-            raise ValueError("No timeseries data; do 'ContactAnalysis.run(store=True)' first.")
+            raise ValueError("No timeseries data; "
+                             "do 'ContactAnalysis.run(store=True)' first.")
         t = self.timeseries
         plot(t[0], t[1], **kwargs)
         xlabel(r"frame number $t$")
@@ -777,8 +825,10 @@ class ContactAnalysis1(object):
             savefig(filename)
 
     def _plot_qavg_pcolor(self, filename=None, **kwargs):
-        """Plot :attr:`ContactAnalysis1.qavg`, the matrix of average native contacts."""
-        from pylab import pcolor, gca, meshgrid, xlabel, ylabel, xlim, ylim, colorbar, savefig
+        """Plot :attr:`ContactAnalysis1.qavg`, the matrix of average native
+        contacts."""
+        from pylab import (pcolor, gca, meshgrid, xlabel, ylabel, xlim, ylim,
+                           colorbar, savefig)
 
         x, y = self.selections[0].resids, self.selections[1].resids
         X, Y = meshgrid(x, y)
@@ -806,7 +856,8 @@ class ContactAnalysis1(object):
         suffix determines the file type, e.g. pdf, png, eps, ...). All other
         keyword arguments are passed on to :func:`pylab.imshow`.
         """
-        from pylab import imshow, xlabel, ylabel, xlim, ylim, colorbar, cm, clf, savefig
+        from pylab import (imshow, xlabel, ylabel, xlim, ylim, colorbar, cm,
+                           clf, savefig)
 
         x, y = self.selections[0].resids, self.selections[1].resids
 
@@ -893,7 +944,8 @@ class Contacts(AnalysisBase):
 
         ref = Universe("villin.gro")
         u = Universe("conf_protein.gro", "traj_protein.xtc")
-        Q = calculate_contacts(u, ref, "protein and not name H*", "protein and not name H*")
+        Q = calculate_contacts(u, ref, "protein and not name H*",
+                               "protein and not name H*")
 
     2. A pair of helices::
 
@@ -949,8 +1001,8 @@ class Contacts(AnalysisBase):
        <http://doi.org/10.1073/pnas.1311599110>`_.
 
     """
-    def __init__(self, u, selection, refgroup, method="cutoff", radius=4.5, outfile=None,
-                 start=None, stop=None, step=None, **kwargs):
+    def __init__(self, u, selection, refgroup, method="cutoff", radius=4.5,
+                 outfile=None, start=None, stop=None, step=None, **kwargs):
         """Calculate the persistence length for polymer chains
 
         Parameters
@@ -987,14 +1039,14 @@ class Contacts(AnalysisBase):
         """
 
         # check method
-        if not method in ("cutoff", "best-hummer"):
+        if method not in ("cutoff", "best-hummer"):
             raise ValueError("method has to be 'cutoff' or 'best-hummer'")
         self._method = method
 
         # method-specific parameters
         if method == "best-hummer":
             self.beta = kwargs.get('beta', 5.0)
-            self.lambda_constant  = kwargs.get('lambda_constant', 1.8)
+            self.lambda_constant = kwargs.get('lambda_constant', 1.8)
 
         # steup boilerplate
         self.u = u
@@ -1030,7 +1082,8 @@ class Contacts(AnalysisBase):
         records = []
         with openany(filename) as data:
             for line in data:
-                if line.startswith('#'): continue
+                if line.startswith('#'):
+                    continue
                 records.append(map(float, line.split()))
         return np.array(records)
 
@@ -1050,12 +1103,13 @@ class Contacts(AnalysisBase):
         elif self._method == "best-hummer":
             y, _ = best_hummer_q(r, r0, self.beta, self.lambda_constant)
         else:
-            raise ValueError("Unknown method type, has to be 'cutoff' or 'best-hummer'")
+            raise ValueError("Unknown method type, has to be "
+                             "'cutoff' or 'best-hummer'")
 
         cm = np.zeros((grA.positions.shape[0], grB.positions.shape[0]))
         cm[mask] = y
         self.contact_matrix.append(cm)
-        self.timeseries.append((self._ts.frame , y, mask.sum()))
+        self.timeseries.append((self._ts.frame, y, mask.sum()))
 
     def _conclude(self):
         """Finalise the timeseries you've gathered.
@@ -1063,7 +1117,8 @@ class Contacts(AnalysisBase):
         Called at the end of the run() method to finish everything up.
         """
         # write output
-        if not self.outfile: return
+        if not self.outfile:
+            return
         with open(self.outfile, "w") as f:
             f.write("# q1 analysis\n# nref = {0:d}\n".format(self.mask.sum()))
             f.write("# frame  q1  n1\n")
@@ -1099,7 +1154,7 @@ class Contacts(AnalysisBase):
             out = (d <= self.radius)
         return out
 
-    def fraction_native(q, out=None):
+    def fraction_native(self, q, out=None):
         """Calculate native contacts relative to reference state.
 
         Parameters
@@ -1135,13 +1190,14 @@ class Contacts(AnalysisBase):
         Parameters
         ----------
         filename : str
-            If `filename` is supplied then the figure is also written to file (the
-            suffix determines the file type, e.g. pdf, png, eps, ...). All other
-            keyword arguments are passed on to `pylab.plot`.
+            If `filename` is supplied then the figure is also written to file
+            (the suffix determines the file type, e.g. pdf, png, eps, ...). All
+            other keyword arguments are passed on to `pylab.plot`.
         **kwargs
             Arbitrary keyword arguments for the plotting function
+
         """
-        if not self.timeseries :
+        if not self.timeseries:
             raise ValueError("No timeseries data; do 'Contacts.run()' first.")
         x, y, _ = zip(*self.timeseries)
 
@@ -1166,13 +1222,14 @@ class Contacts(AnalysisBase):
         Parameters
         ----------
         filename : str
-            If `filename` is supplied then the figure is also written to file (the
-            suffix determines the file type, e.g. pdf, png, eps, ...). All other
-            keyword arguments are passed on to `pylab.imshow`.
+            If `filename` is supplied then the figure is also written to file
+            (the suffix determines the file type, e.g. pdf, png, eps, ...). All
+            other keyword arguments are passed on to `pylab.imshow`.
         **kwargs
             Arbitrary keyword arguments for the plotting function
+
         """
-        if not self.contact_matrix :
+        if not self.contact_matrix:
             raise ValueError("No timeseries data; do 'Contacts.run()' first.")
         # collapse on the time-axis
         data = np.array(self.contact_matrix)
@@ -1192,7 +1249,7 @@ class Contacts(AnalysisBase):
         ax = fig.add_subplot(111)
         cax = ax.imshow(data, **kwargs)
 
-        cbar = fig.colorbar(cax)
+        fig.colorbar(cax)
 
         if filename:
             fig.savefig(filename)
