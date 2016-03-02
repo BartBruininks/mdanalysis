@@ -968,7 +968,7 @@ class Contacts(AnalysisBase):
 
     """
     def __init__(self, u, selection, refgroup, method="cutoff", radius=4.5,
-                 outfile=None, start=None, stop=None, step=None, **kwargs):
+                 start=None, stop=None, step=None, **kwargs):
         """
 
         Parameters
@@ -1022,7 +1022,6 @@ class Contacts(AnalysisBase):
         self.fraction_kwargs = kwargs
 
         self.timeseries = []
-        self.outfile = outfile
 
     def _single_frame(self):
         grA, grB, r0, mask = self.grA, self.grB, self.r0, self.mask
@@ -1039,15 +1038,16 @@ class Contacts(AnalysisBase):
 
         self.timeseries.append((self._ts.frame, y, mask.sum()))
 
-    def _conclude(self):
-        """Finalise the timeseries you've gathered.
+    def save(self, outfile):
+        """save contacts timeseries
 
-        Called at the end of the run() method to finish everything up.
+        Parameter
+        ---------
+        outfile : str
+            file to save contacts
+
         """
-        # write output
-        if not self.outfile:
-            return
-        with open(self.outfile, "w") as f:
+        with open(outfile, "w") as f:
             f.write("# q1 analysis\n# nref = {0:d}\n".format(self.mask.sum()))
             f.write("# frame  q1  n1\n")
             for frame, q1, n1 in self.timeseries:
