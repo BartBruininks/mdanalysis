@@ -916,6 +916,32 @@ def hard_cut(distances, cutoff):
     return float(y.sum()) / distances.size
 
 
+def contact_matrix(d, radius, out=None):
+    """Return distance array with True for contacts.
+
+    Parameters
+    ----------
+    d : array
+        is the matrix of distances. The method uses the value of
+        `ContactAnalysis1.radius` to determine if a ``distance < radius``
+        is considered a contact.
+    out: array (optional)
+        If `out` is supplied as a pre-allocated array of the correct
+        shape then it is filled instead of allocating a new one in
+        order to increase performance.
+
+    Returns
+    -------
+    array
+        boolean array of which contacts are formed
+    """
+    if out:
+        out[:] = (d <= radius)
+    else:
+        out = (d <= radius)
+    return out
+
+
 class Contacts(AnalysisBase):
     """Calculate fraction of native contacts (Q) from a trajectory
 
@@ -1116,34 +1142,6 @@ class Contacts(AnalysisBase):
             for frame, q1, n1 in self.timeseries:
                 f.write("{frame:4d}  {q1:8.6f} {n1:5d}\n".format(**vars()))
 
-    def contact_matrix(self, d, out=None):
-        """Return distance array with True for contacts.
-
-        Parameters
-        ----------
-        d : array
-            is the matrix of distances. The method uses the value of
-            `ContactAnalysis1.radius` to determine if a ``distance < radius``
-            is considered a contact.
-        out: array (optional)
-            If `out` is supplied as a pre-allocated array of the correct
-            shape then it is filled instead of allocating a new one in
-            order to increase performance.
-
-        Returns
-        -------
-        array
-            boolean array of which contacts are formed
-
-        Note
-        ----
-        This method is typically only used internally.
-        """
-        if out:
-            out[:] = (d <= self.radius)
-        else:
-            out = (d <= self.radius)
-        return out
 
     def fraction_native(self, q, out=None):
         """Calculate native contacts relative to reference state.
