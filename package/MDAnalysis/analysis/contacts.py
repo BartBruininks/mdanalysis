@@ -1088,7 +1088,6 @@ class Contacts(AnalysisBase):
         self.mask = r0 < radius
         self.fraction_kwargs = kwargs
 
-        self.contact_matrix = []
         self.timeseries = []
         self.outfile = outfile
 
@@ -1123,9 +1122,6 @@ class Contacts(AnalysisBase):
 
         y = self.fraction_contacts(r, r0, **self.fraction_kwargs)
 
-        cm = np.zeros((grA.positions.shape[0], grB.positions.shape[0]))
-        cm[mask] = y
-        self.contact_matrix.append(cm)
         self.timeseries.append((self._ts.frame, y, mask.sum()))
 
     def _conclude(self):
@@ -1199,46 +1195,6 @@ class Contacts(AnalysisBase):
         ax.plot(x, y, **kwargs)
         ax.set_xlabel(r"frame number $t$")
         ax.set_ylabel(r"contacts $q_1$")
-
-        if filename:
-            fig.savefig(filename)
-        else:
-            fig.show()
-
-    def plot_qavg(self, filename=None, **kwargs):
-        """Plot `Contacts.qavg`, the matrix of average contacts.
-
-        Parameters
-        ----------
-        filename : str
-            If `filename` is supplied then the figure is also written to file
-            (the suffix determines the file type, e.g. pdf, png, eps, ...). All
-            other keyword arguments are passed on to `pylab.imshow`.
-        **kwargs
-            Arbitrary keyword arguments for the plotting function
-
-        """
-        if not self.contact_matrix:
-            raise ValueError("No timeseries data; do 'Contacts.run()' first.")
-        # collapse on the time-axis
-        data = np.array(self.contact_matrix)
-        data = data.mean(axis=0)
-
-        import matplotlib.pyplot as plt
-        import matplotlib.cm as cm
-
-        kwargs['origin'] = 'lower'
-        kwargs.setdefault('aspect', 'equal')
-        kwargs.setdefault('interpolation', 'nearest')
-        kwargs.setdefault('vmin', 0)
-        kwargs.setdefault('vmax', 1)
-        kwargs.setdefault('cmap', cm.hot)
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        cax = ax.imshow(data, **kwargs)
-
-        fig.colorbar(cax)
 
         if filename:
             fig.savefig(filename)
