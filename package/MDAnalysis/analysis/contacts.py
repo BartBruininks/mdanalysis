@@ -1138,37 +1138,6 @@ class Contacts(AnalysisBase):
             for frame, q1, n1 in self.timeseries:
                 f.write("{frame:4d}  {q1:8.6f} {n1:5d}\n".format(**vars()))
 
-
-    def fraction_native(self, q, out=None):
-        """Calculate native contacts relative to reference state.
-
-        Parameters
-        ----------
-        q: array
-            is the matrix of contacts (e.g. `ContactAnalysis1.q`).
-        out: array
-            If *out* is supplied as a pre-allocated array of the correct
-            shape then it is filled instead of allocating a new one in
-            order to increase performance.
-
-        Returns
-        -------
-        contacts : integer
-           total number of contacts
-        fraction : float
-           Fraction of native contacts (Q) calculated from a contact matrix
-
-        Note
-        ----
-        This method is typically only used internally.
-        """
-        if out:
-            np.logical_and(q, self.mask, out)
-        else:
-            out = np.logical_and(q, self.mask)
-        contacts = out.sum()
-        return contacts, float(contacts) / self.mask.sum()
-
     def plot(self, filename=None, **kwargs):
         """Plot q(t).
 
