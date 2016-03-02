@@ -958,32 +958,6 @@ class Contacts(AnalysisBase):
     Supports either hard-cutoff or soft-cutoff (Best-Hummer like [1]_)
     contacts.
 
-    Returns
-    -------
-    list
-        Returns a list of following structure::
-            {
-                [[t1, q1], [t2, q2], ... [tn, qn]]
-            }
-        where t is time in ps and q is the fraction of native contacts
-
-    Examples
-    --------
-
-    1. Protein folding::
-
-        ref = Universe("villin.gro")
-        u = Universe("conf_protein.gro", "traj_protein.xtc")
-        Q = calculate_contacts(u, ref, "protein and not name H*",
-                               "protein and not name H*")
-
-    2. A pair of helices::
-
-        ref = Universe("glycophorin_dimer.pdb")
-        u = Universe("conf_protein.gro", "traj_protein.xtc")
-        Q = calculate_contacts(u, ref, \
-            "protein and resid 75-92 and not name H* and segid A", \
-            "protein and resid 75-92 and not name H* and segid B")
 
     Parameter choices
     -----------------
@@ -991,44 +965,6 @@ class Contacts(AnalysisBase):
     These parameters should be insensitive to small changes.
     * For all-atom simulations, radius = 4.5 A and lambda_constant = 1.8 (unitless)
     * For coarse-grained simulations, radius = 6.0 A and lambda_constant = 1.5 (unitless)
-
-    Additional
-    ----------
-    Supports writing and reading the analysis results to and from a text file.
-    Supports simple plotting operations, for exploratory data analysis.
-
-    Notes
-    -----
-    We use the definition of Best et al [1]_, namely Eq. (1) of the SI
-    defines the expression for the fraction of native contacts,
-    $Q(X)$:
-
-    .. math::
-
-        Q(X) = \frac{1}{|S|} \sum_{(i,j) \in S}
-               \frac{1}{1 + \exp[\beta(r_{ij}(X) - \lambda r_{ij}^0)]}
-
-    where:
-
-    * :math:`X` is a conformation,
-    * :math:`r_{ij}(X)` is the distance between atoms $i$ and $j$ in
-      conformation $X$,
-    * :math:`r^0_{ij}` is the distance from heavy atom i to j in the
-      native state conformation,
-    * :math:`S` is the set of all pairs of heavy atoms $(i,j)$
-      belonging to residues $\theta_i$ and $\theta_j$ such that
-      $|\theta_i - \theta_j| > 3$ and $r^0_{i,} < 4.5
-      \unicode{x212B}$,
-    * :math:`\beta=5 \unicode{x212B}^{-1},
-    * :math:`\lambda=1.8` for all-atom simulations
-
-    References
-    ----------
-
-    .. [1] RB Best, G Hummer, and WA Eaton, "Native contacts determine
-       protein folding mechanisms in atomistic simulations" _PNAS_
-       **110** (2013), 17874–17879.  `10.1073/pnas.1311599110
-       <http://doi.org/10.1073/pnas.1311599110>`_.
 
     """
     def __init__(self, u, selection, refgroup, method="cutoff", radius=4.5,
@@ -1072,14 +1008,11 @@ class Contacts(AnalysisBase):
 
         # setup boilerplate
         self.u = u
-        self._setup_frames(self.u.trajectory,
-                           start=start,
-                           stop=stop,
-                           step=step)
+        self._setup_frames(self.u.trajectory, start, stop, step)
 
         self.selection = selection
-        grA, grB = u.select_atoms(selection[0]), u.select_atoms(selection[1])
-        self.grA, self.grB = grA, grB
+        self.grA = u.select_atoms(selection[0])
+        self.grB = u.select_atoms(selection[1])
         refA, refB = refgroup
 
         # contacts formed in reference
@@ -1090,24 +1023,6 @@ class Contacts(AnalysisBase):
 
         self.timeseries = []
         self.outfile = outfile
-
-    def load(self, filename):
-        """Load the data file.
-
-        Arguments
-        ---------
-        filename : string
-            name of the data file to be read (can be compressed
-            or a stream, see :func:`~MDAnalysis.lib.util.openany`
-            for what is possible)
-        """
-        records = []
-        with openany(filename) as data:
-            for line in data:
-                if line.startswith('#'):
-                    continue
-                records.append(map(float, line.split()))
-        return np.array(records)
 
     def _single_frame(self):
         grA, grB, r0, mask = self.grA, self.grB, self.r0, self.mask
