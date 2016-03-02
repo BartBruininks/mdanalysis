@@ -1052,35 +1052,3 @@ class Contacts(AnalysisBase):
             f.write("# frame  q1  n1\n")
             for frame, q1, n1 in self.timeseries:
                 f.write("{frame:4d}  {q1:8.6f} {n1:5d}\n".format(**vars()))
-
-    def plot(self, filename=None, **kwargs):
-        """Plot q(t).
-
-        Parameters
-        ----------
-        filename : str
-            If `filename` is supplied then the figure is also written to file
-            (the suffix determines the file type, e.g. pdf, png, eps, ...). All
-            other keyword arguments are passed on to `pylab.plot`.
-        **kwargs
-            Arbitrary keyword arguments for the plotting function
-
-        """
-        if not self.timeseries:
-            raise ValueError("No timeseries data; do 'Contacts.run()' first.")
-        x, y, _ = zip(*self.timeseries)
-
-        import matplotlib.pyplot as plt
-        kwargs.setdefault('color', 'black')
-        kwargs.setdefault('linewidth', 2)
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(x, y, **kwargs)
-        ax.set_xlabel(r"frame number $t$")
-        ax.set_ylabel(r"contacts $q_1$")
-
-        if filename:
-            fig.savefig(filename)
-        else:
-            fig.show()
