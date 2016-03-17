@@ -204,7 +204,22 @@ def best_hummer_q(r, r0, beta=5.0, lambda_constant=1.8):
 
 
 def hard_cut(distances, cutoff):
-    """calculate fraction of distances below cutoff"""
+    """calculate fraction of distances below cutoff
+
+    Parameters
+    ----------
+    distances : ndarray
+        distance matrix
+    cutoff : ndarray | float
+        cut off value to count distances. Can either be a float of a ndarray of
+        the same size as distances
+
+    Returns
+    -------
+    Q : float
+        fraction of distances below cutoff
+
+    """
     y = distances <= cutoff
     return float(y.sum()) / distances.size
 
@@ -306,30 +321,26 @@ class Contacts(AnalysisBase):
         self.selection = selection
         self.grA = u.select_atoms(selection[0])
         self.grB = u.select_atoms(selection[1])
-        refA, refB = refgroup
 
         # contacts formed in reference
-        r0 = distance_array(refA.positions, refB.positions)
-        self.r0 = r0
-        self.mask = r0 < radius
-        self.fraction_kwargs = kwargs
+        refA, refB = refgroup
+        self.r0 = distance_array(refA.positions, refB.positions)
+        self.initial_contacts = contact_matrix(self.r0, radius)
 
+        self.fraction_kwargs = kwargs
         self.timeseries = []
 
     def _single_frame(self):
-        grA, grB, r0, mask = self.grA, self.grB, self.r0, self.mask
-
         # compute distance array for a frame
-        d = distance_array(grA.positions, grB.positions)
+        d = distance_array(self.grA.positions, self.grB.positions)
 
         # select only the contacts that were formed in the reference state
-        # r, r0 are 1D array
-        r = d[mask]
-        r0 = r0[mask]
+        r = d[self.initial_contacts]
+        r0 = self.r0[self.initial_contacts]
 
-        y = self.fraction_contacts(r, r0, **self.fraction_kwargs)
+        y = self.fraction_contacts(r, self.r0, **self.fraction_kwargs)
 
-        self.timeseries.append((self._ts.frame, y, mask.sum()))
+        self.timeseries.append((self._ts.frame, y))
 
     def save(self, outfile):
         """save contacts timeseries
@@ -342,9 +353,9 @@ class Contacts(AnalysisBase):
         """
         with open(outfile, "w") as f:
             f.write("# q1 analysis\n# nref = {0:d}\n".format(self.mask.sum()))
-            f.write("# frame  q1  n1\n")
+            f.write("# frame  q1\n")
             for frame, q1, n1 in self.timeseries:
-                f.write("{frame:4d}  {q1:8.6f} {n1:5d}\n".format(**vars()))
+                f.write("{frame:4d}  {q1:8.6f}\n".format(**vars()))
 
 
 ################################################################################
