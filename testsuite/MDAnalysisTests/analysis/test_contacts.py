@@ -30,9 +30,9 @@ import os
 import tempdir
 
 from MDAnalysisTests.datafiles import (
-    PSF, 
-    DCD, 
-    contacts_villin_folded, 
+    PSF,
+    DCD,
+    contacts_villin_folded,
     contacts_villin_unfolded,
     contacts_file,
 )
@@ -44,7 +44,7 @@ from MDAnalysisTests import executable_not_found, parser_not_found
 def best_hummer_q(ref, u, selA, selB, radius=4.5, beta=5.0, lambda_constant=1.8):
     """
         Reference implementation for testing
-    """    
+    """
     # reference groups A and B from selection strings
     refA, refB = ref.select_atoms(selA), ref.select_atoms(selB)
 
@@ -83,18 +83,17 @@ class TestContactAnalysis1(TestCase):
 
     def tearDown(self):
         del self.universe, self.trajectory
-        del self.folded, self.unfolded  
+        del self.folded, self.unfolded
 
     def _run_ContactAnalysis1(self, **runkwargs):
         sel_basic = "(resname ARG or resname LYS) and (name NH* or name NZ)"
         sel_acidic = "(resname ASP or resname GLU) and (name OE* or name OD*)"
         acidic = self.universe.select_atoms(sel_acidic)
         basic = self.universe.select_atoms(sel_basic)
-        outfile = 'qsalt.dat'
         CA1 = MDAnalysis.analysis.contacts.Contacts(
             self.universe,
             selection=(sel_acidic, sel_basic), refgroup=(acidic, basic),
-            radius=6.0, outfile=outfile, **runkwargs)
+            radius=6.0, **runkwargs)
         kwargs = runkwargs.copy()
         kwargs['force'] = True
         CA1.run(**kwargs)
@@ -177,7 +176,7 @@ class TestContactAnalysis1(TestCase):
 
         q = MDAnalysis.analysis.contacts.Contacts(u, selection=(sel, sel), refgroup=(grF, grF), method="best-hummer")
         q.run()
-        
+
         results = zip(*best_hummer_q(f, u, sel, sel))[1]
 
         assert_almost_equal(zip(*q.timeseries)[1], results)
@@ -195,6 +194,6 @@ class TestContactAnalysis1(TestCase):
 
         q = MDAnalysis.analysis.contacts.Contacts(u, selection=(sel, sel), refgroup=(grF, grF), method="best-hummer")
         q.run()
-        
+
         results = zip(*best_hummer_q(f, u, sel, sel)) [1]
-        assert_almost_equal(zip(*q.timeseries)[1], results)        
+        assert_almost_equal(zip(*q.timeseries)[1], results)
